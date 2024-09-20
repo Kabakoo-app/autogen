@@ -5,7 +5,7 @@ from .conversable_agent import ConversableAgent, register_function
 from .groupchat import GroupChat, GroupChatManager
 from .user_proxy_agent import UserProxyAgent
 from .utils import gather_usage_summary
-from contrib import langfuse
+from .contrib.langfuse import LangFuseInitializer, LangFuseTrace
 
 __all__ = (
     "Agent",
@@ -18,5 +18,6 @@ __all__ = (
     "initiate_chats",
     "gather_usage_summary",
     "ChatResult",
-    "langfuse"
+    "LangFuseInitializer",
+    "LangFuseTrace"
 )
