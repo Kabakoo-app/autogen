@@ -47,6 +47,12 @@ class LangFuseInitializer:
 
         self.tracks_store = tracks_store
 
+    def set_user_proxy_agent(self, agent):
+        self.user_proxy_agent = agent
+
+    def set_coordinator_agent(self, agent):
+        self.coordination_agent = agent
+
     def observe(
             self,
             user_id: str = None,
@@ -100,10 +106,13 @@ class LangFuseInitializer:
                 model = self._get_model(chat_result)
 
                 for data in self.tracks_store:
-                    if data["name"] != "user_proxy":
+                    user_proxy_agent_name = self.user_proxy_agent.name if self.user_proxy_agent else ""
+
+                    if data["name"] != user_proxy_agent_name:
+                        coordination_agent_name = self.coordination_agent.name if self.coordination_agent else ""
 
                         generation = trace.generation(
-                            name=data["name"] if data["name"] != "speaker_selection_agent" else "coordination_agent",
+                            name= coordination_agent_name if data["name"] == "speaker_selection_agent" and coordination_agent_name else data["name"],
                             model=model,
                             start_time=data["start_time"],
                             end_time=data["end_time"],
