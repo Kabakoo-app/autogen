@@ -12,12 +12,15 @@ from langfuse.model import ModelUsage
 from llm_pricing import oai_prices
 
 
-class VariableNotFoundError(Exception):
-    pass
-
-
 class LangFuseInitializer:
-    def __init__(self, langfuse_secret_key, langfuse_public_key, langfuse_host, langfuse_sample_rate="1", langfuse_debug="False"):
+    def __init__(
+        self,
+        langfuse_secret_key: str,
+        langfuse_public_key: str,
+        langfuse_host: str,
+        langfuse_sample_rate: str = "1",
+        langfuse_debug: str = "False",
+    ):
         self.langfuse_secret_key = langfuse_secret_key
         self.langfuse_public_key = langfuse_public_key
         self.langfuse_host = langfuse_host
@@ -25,9 +28,7 @@ class LangFuseInitializer:
         self.langfuse_debug = langfuse_debug
 
         self.langfuse = None
-        self.user_proxy_agent = None
-        self.coordination_agent = None
-        self.tracks_store = None
+        self.initialized = False
 
         self.initialize()
 
@@ -41,6 +42,24 @@ class LangFuseInitializer:
         self.langfuse = Langfuse()
 
         assert self.langfuse.auth_check()
+
+        self.initialized = True
+
+        return self.langfuse
+
+
+class LangFuseTrace:
+    def __init__(self, langfuse):
+        self.langfuse = langfuse
+
+        if not self.langfuse.initialized:
+            raise RuntimeError("LangFuseInitializer is not initialized")
+
+        self.initialized = False
+        self.langfuse = None
+        self.user_proxy_agent = None
+        self.coordination_agent = None
+        self.tracks_store = None
 
     def set_tracks(self, tracks_store: list):
         self._is_tracks_store_a_variable(tracks_store)
@@ -196,3 +215,7 @@ class LangFuseInitializer:
         model = [i for i in cost.keys() if "gpt" in i][0]
 
         return model
+
+
+class VariableNotFoundError(Exception):
+    pass
