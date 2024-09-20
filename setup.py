@@ -30,6 +30,7 @@ install_requires = [
     "pydantic>=1.10,<3,!=2.6.0",  # could be both V1 and V2
     "docker",
     "packaging",
+    "langfuse"
 ]
 
 jupyter_executor = [
