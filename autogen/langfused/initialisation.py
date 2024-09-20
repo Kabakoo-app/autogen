@@ -9,7 +9,7 @@ import tiktoken
 from langfuse import Langfuse
 from langfuse.model import ModelUsage
 
-from llm_pricing import oai_prices
+from .llm_pricing import oai_prices
 
 
 class LangFuseInitializer:

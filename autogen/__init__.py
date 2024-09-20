@@ -6,7 +6,7 @@ from .exception_utils import *
 from .oai import *
 from .version import __version__
 
-import langfused
+from .langfused import *
 
 # Set the root logger.
 logger = logging.getLogger(__name__)
