@@ -69,7 +69,7 @@ class ConversableAgent(LLMAgent):
     def __init__(
         self,
         name: str,
-        tracks_store: Any,
+        tracks_store: Any = None,
         system_message: Optional[Union[str, List]] = "You are a helpful AI Assistant.",
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
@@ -1429,15 +1429,16 @@ class ConversableAgent(LLMAgent):
 
         end_time = datetime.now(timezone.utc)
 
-        data = {
-            "name": self.name,
-            "start_time": start_time,
-            "end_time": end_time,
-            "input": self._oai_system_message + messages,
-            "output": extracted_response
-        }
+        if self.tracks_store is not None:
+            data = {
+                "name": self.name,
+                "start_time": start_time,
+                "end_time": end_time,
+                "input": self._oai_system_message + messages,
+                "output": extracted_response
+            }
 
-        self.tracks_store.append(data)
+            self.tracks_store.append(data)
 
         return (False, None) if extracted_response is None else (True, extracted_response)
 

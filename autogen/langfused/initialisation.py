@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 import functools
-import secrets
+import warnings
 import inspect
+import secrets
 import os
 
 import tiktoken
@@ -52,6 +53,9 @@ class LangFuseTrace:
     def __init__(self, langfuse):
         self.langfuse = langfuse
 
+        if not isinstance(self.langfuse, LangFuseInitializer):
+            raise RuntimeError("Provided langfuse is not a LangFuseInitializer instance")
+
         if not self.langfuse.initialized:
             raise RuntimeError("LangFuseInitializer is not initialized")
 
@@ -81,8 +85,12 @@ class LangFuseTrace:
             metadata: dict = None,
             tracks_store: list = None
     ):
-        if not tracks_store:
+        if tracks_store is None:
             raise RuntimeError("LangFuseInitializer.set_tracks(tracks_store: list) must be called before observations")
+
+        if not tracks_store:
+            raise warnings.warn("No generation has been observed. Check that the same \"tracks_store\" has been "
+                                "added in the agents and \"@LangFuseTrace.observe\"")
 
         if not user_id:
             user_id = self._generate_user_id()
