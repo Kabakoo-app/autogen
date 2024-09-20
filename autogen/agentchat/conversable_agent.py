@@ -9,6 +9,7 @@ import warnings
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, TypeVar, Union
 
+from datetime import datetime, timezone
 from openai import BadRequestError
 
 from autogen.agentchat.chat import _post_process_carryover_item
@@ -68,6 +69,7 @@ class ConversableAgent(LLMAgent):
     def __init__(
         self,
         name: str,
+        tracks_store: Any,
         system_message: Optional[Union[str, List]] = "You are a helpful AI Assistant.",
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
@@ -78,7 +80,7 @@ class ConversableAgent(LLMAgent):
         default_auto_reply: Union[str, Dict] = "",
         description: Optional[str] = None,
         chat_messages: Optional[Dict[Agent, List[Dict]]] = None,
-        silent: Optional[bool] = None,
+        silent: Optional[bool] = True,
     ):
         """
         Args:
@@ -137,6 +139,9 @@ class ConversableAgent(LLMAgent):
         )
 
         self._name = name
+
+        self.tracks_store = tracks_store
+
         # a dictionary of conversations, default value is list
         if chat_messages is None:
             self._oai_messages = defaultdict(list)
@@ -268,7 +273,7 @@ class ConversableAgent(LLMAgent):
         self.client = None if self.llm_config is False else OpenAIWrapper(**self.llm_config)
 
     @staticmethod
-    def _is_silent(agent: Agent, silent: Optional[bool] = False) -> bool:
+    def _is_silent(agent: Agent, silent: Optional[bool] = True) -> bool:
         return agent.silent if agent.silent is not None else silent
 
     @property
@@ -690,7 +695,7 @@ class ConversableAgent(LLMAgent):
         message: Union[Dict, str],
         recipient: Agent,
         request_reply: Optional[bool] = None,
-        silent: Optional[bool] = False,
+        silent: Optional[bool] = True,
     ):
         """Send a message to another agent.
 
@@ -740,7 +745,7 @@ class ConversableAgent(LLMAgent):
         message: Union[Dict, str],
         recipient: Agent,
         request_reply: Optional[bool] = None,
-        silent: Optional[bool] = False,
+        silent: Optional[bool] = True,
     ):
         """(async) Send a message to another agent.
 
@@ -865,7 +870,7 @@ class ConversableAgent(LLMAgent):
         message: Union[Dict, str],
         sender: Agent,
         request_reply: Optional[bool] = None,
-        silent: Optional[bool] = False,
+        silent: Optional[bool] = True,
     ):
         """Receive a message from another agent.
 
@@ -902,7 +907,7 @@ class ConversableAgent(LLMAgent):
         message: Union[Dict, str],
         sender: Agent,
         request_reply: Optional[bool] = None,
-        silent: Optional[bool] = False,
+        silent: Optional[bool] = True,
     ):
         """(async) Receive a message from another agent.
 
@@ -972,7 +977,7 @@ class ConversableAgent(LLMAgent):
         self,
         recipient: "ConversableAgent",
         clear_history: bool = True,
-        silent: Optional[bool] = False,
+        silent: Optional[bool] = True,
         cache: Optional[AbstractCache] = None,
         max_turns: Optional[int] = None,
         summary_method: Optional[Union[str, Callable]] = DEFAULT_SUMMARY_METHOD,
@@ -1115,7 +1120,7 @@ class ConversableAgent(LLMAgent):
         self,
         recipient: "ConversableAgent",
         clear_history: bool = True,
-        silent: Optional[bool] = False,
+        silent: Optional[bool] = True,
         cache: Optional[AbstractCache] = None,
         max_turns: Optional[int] = None,
         summary_method: Optional[Union[str, Callable]] = DEFAULT_SUMMARY_METHOD,
@@ -1409,6 +1414,9 @@ class ConversableAgent(LLMAgent):
         sender: Optional[Agent] = None,
         config: Optional[OpenAIWrapper] = None,
     ) -> Tuple[bool, Union[str, Dict, None]]:
+
+        start_time = datetime.now(timezone.utc)
+
         """Generate a reply using autogen.oai."""
         client = self.client if config is None else config
         if client is None:
@@ -1418,6 +1426,19 @@ class ConversableAgent(LLMAgent):
         extracted_response = self._generate_oai_reply_from_client(
             client, self._oai_system_message + messages, self.client_cache
         )
+
+        end_time = datetime.now(timezone.utc)
+
+        data = {
+            "name": self.name,
+            "start_time": start_time,
+            "end_time": end_time,
+            "input": self._oai_system_message + messages,
+            "output": extracted_response
+        }
+
+        self.tracks_store.append(data)
+
         return (False, None) if extracted_response is None else (True, extracted_response)
 
     def _generate_oai_reply_from_client(self, llm_client, messages, cache) -> Union[str, Dict, None]:
