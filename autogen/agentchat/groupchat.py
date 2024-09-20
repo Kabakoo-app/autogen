@@ -107,7 +107,7 @@ class GroupChat:
     - send_introductions: send a round of introductions at the start of the group chat, so agents know who they can speak to (default: False)
     - role_for_select_speaker_messages: sets the role name for speaker selection when in 'auto' mode, typically 'user' or 'system'. (default: 'system')
     """
-
+    tracks_store: Any
     agents: List[Agent]
     messages: List[Dict]
     max_round: int = 10
@@ -644,7 +644,7 @@ class GroupChat:
         # Two-agent chat for speaker selection
 
         # Agent for checking the response from the speaker_select_agent
-        checking_agent = ConversableAgent("checking_agent", default_auto_reply=max_attempts)
+        checking_agent = ConversableAgent("checking_agent", default_auto_reply=max_attempts, tracks_store=self.tracks_store)
 
         # Register the speaker validation function with the checking agent
         checking_agent.register_reply(
@@ -666,6 +666,7 @@ class GroupChat:
             ),
             llm_config=selector.llm_config,
             human_input_mode="NEVER",  # Suppresses some extra terminal outputs, outputs will be handled by select_speaker_auto_verbose
+            tracks_store=self.tracks_store
         )
 
         # Create the starting message
@@ -747,7 +748,7 @@ class GroupChat:
         # Two-agent chat for speaker selection
 
         # Agent for checking the response from the speaker_select_agent
-        checking_agent = ConversableAgent("checking_agent", default_auto_reply=max_attempts)
+        checking_agent = ConversableAgent("checking_agent", default_auto_reply=max_attempts, tracks_store=self.tracks_store)
 
         # Register the speaker validation function with the checking agent
         checking_agent.register_reply(
@@ -765,6 +766,7 @@ class GroupChat:
             chat_messages={checking_agent: messages},
             llm_config=selector.llm_config,
             human_input_mode="NEVER",  # Suppresses some extra terminal outputs, outputs will be handled by select_speaker_auto_verbose
+            tracks_store=self.tracks_store
         )
 
         # Create the starting message
