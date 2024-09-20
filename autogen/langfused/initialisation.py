@@ -31,8 +31,6 @@ class LangFuseInitializer:
         self.langfuse = None
         self.initialized = False
 
-        self.initialize()
-
     def initialize(self):
         os.environ["LANGFUSE_SECRET_KEY"] = self.langfuse_secret_key
         os.environ["LANGFUSE_PUBLIC_KEY"] = self.langfuse_public_key
@@ -53,25 +51,17 @@ class LangFuseTrace:
     def __init__(self, langfuse):
         self.langfuse = langfuse
 
-        if not isinstance(self.langfuse, LangFuseInitializer):
+        if not isinstance(self.langfuse, Langfuse):
             raise RuntimeError("Provided langfuse is not a LangFuseInitializer instance")
 
-        if not self.langfuse.initialized:
-            raise RuntimeError("LangFuseInitializer is not initialized")
-
         self.initialized = False
-        self.langfuse = None
-        self.user_proxy_agent = None
         self.coordination_agent = None
         self.tracks_store = None
 
-    def set_tracks(self, tracks_store: list):
-        self._is_tracks_store_a_variable(tracks_store)
+    def set_tracks_store(self, tracks_store_variable_name: str):
+        tracks_store = self._is_tracks_store_a_variable(tracks_store_variable_name)
 
         self.tracks_store = tracks_store
-
-    def set_user_proxy_agent(self, agent):
-        self.user_proxy_agent = agent
 
     def set_coordinator_agent(self, agent):
         self.coordination_agent = agent
@@ -83,14 +73,9 @@ class LangFuseTrace:
             session_id: str = None,
             tags: list = None,
             metadata: dict = None,
-            tracks_store: list = None
     ):
-        if tracks_store is None:
-            raise RuntimeError("LangFuseInitializer.set_tracks(tracks_store: list) must be called before observations")
-
-        if not tracks_store:
-            raise warnings.warn("No generation has been observed. Check that the same \"tracks_store\" has been "
-                                "added in the agents and \"@LangFuseTrace.observe\"")
+        if self.tracks_store is None:
+            raise RuntimeError("LangFuseInitializer.set_tracks_store(tracks_store: list) must be called before observations")
 
         if not user_id:
             user_id = self._generate_user_id()
@@ -103,12 +88,10 @@ class LangFuseTrace:
         def decorator(func):
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
-                # update trace with function name and dynamic session/user_id
-                trace = self.langfuse.trace(
-                    name=name if name else func.__name__,
-                    start_time=start_time,
-                    session_id=session_id,
-                    user_id=user_id,
+                print(
+                    "\n"
+                    "STARTING OBSERVATION WITH \"kabakoo/langfused\""
+                    "\n"
                 )
 
                 # then execute the function
@@ -116,26 +99,36 @@ class LangFuseTrace:
 
                 end_time = self._get_timestamp()
 
-                # capture output data if set
-                trace.update(
-                    input=initial_message,
-                    end_time=end_time,
-                    output=finale_answer
-                )
+                if not self.tracks_store:
+                    print(
+                        "\n"
+                        "WARNING >>> : NO GENERATION HAS BEEN OBSERVED. CHECK THAT THE SAME \"tracks_store\" HAS BEEN "
+                        "ADDED IN THE AGENTS AND \"@LangFuseTrace.set_tracks_store\""
+                        "\n"
+                    )
 
-                if tags:
-                    trace.update(tags=tags)
+                else:
+                    # update trace with function name and dynamic session/user_id
+                    trace = self.langfuse.trace(
+                        name=name if name else func.__name__,
+                        start_time=start_time,
+                        session_id=session_id,
+                        user_id=user_id,
+                        input=initial_message,
+                        end_time=end_time,
+                        output=finale_answer
+                    )
 
-                if tags:
-                    trace.update(metadata=metadata)
+                    if tags:
+                        trace.update(tags=tags)
 
-                # get the model name
-                model = self._get_model(chat_result)
+                    if tags:
+                        trace.update(metadata=metadata)
 
-                for data in self.tracks_store:
-                    user_proxy_agent_name = self.user_proxy_agent.name if self.user_proxy_agent else ""
+                    # get the model name
+                    model = self._get_model(chat_result)
 
-                    if data["name"] != user_proxy_agent_name:
+                    for data in self.tracks_store:
                         coordination_agent_name = self.coordination_agent.name if self.coordination_agent else ""
 
                         generation = trace.generation(
@@ -167,6 +160,12 @@ class LangFuseTrace:
                             model=model,
                             usage=_langfuse_usage
                         )
+
+                print(
+                    "\n"
+                    "FINISHED OBSERVATION WITH \"kabakoo/langfused\""
+                    "\n"
+                )
 
                 return chat_result
 
@@ -207,15 +206,21 @@ class LangFuseTrace:
         return datetime.now(timezone.utc)
 
     @staticmethod
-    def _is_tracks_store_a_variable(tracks_store):
+    def _is_tracks_store_a_variable(tracks_store_variable_name):
         frame = inspect.currentframe()
-        caller_locals = frame.f_back.f_locals
-        variable_name = [name for name, value in caller_locals.items() if value is tracks_store]
+        caller_locals = frame.f_back.f_back.f_locals
 
-        if variable_name:
-            return True
-        else:
-            raise VariableNotFoundError("tracks_store must be a variable")
+        try:
+            tracks_store = caller_locals[tracks_store_variable_name]
+
+            if not type(tracks_store) is list:
+                raise VariableTypeError("\"tracks_store\" must be a list")
+
+            else:
+                return tracks_store
+
+        except KeyError:
+            raise VariableNotFoundError("\"tracks_store\" must be a variable")
 
     @staticmethod
     def _get_model(chat_result):
@@ -226,4 +231,8 @@ class LangFuseTrace:
 
 
 class VariableNotFoundError(Exception):
+    pass
+
+
+class VariableTypeError(Exception):
     pass
