@@ -157,7 +157,8 @@ class ConversableAgent(LLMAgent):
             if is_termination_msg is not None
             else (lambda x: content_str(x.get("content")) == "TERMINATE")
         )
-        self.silent = self.mute if self.mute else silent
+        self.silent = self.mute if self.mute is True else silent
+
         # Take a copy to avoid modifying the given dict
         if isinstance(llm_config, dict):
             try:
@@ -276,7 +277,7 @@ class ConversableAgent(LLMAgent):
 
     @staticmethod
     def _is_silent(agent: Agent, silent: Optional[bool] = False) -> bool:
-        return agent.mute if agent.mute else agent.silent if agent.silent is not None else silent
+        return agent.silent if agent.silent is not None else silent
 
     @property
     def name(self) -> str:
@@ -688,7 +689,7 @@ class ConversableAgent(LLMAgent):
         hook_list = self.hook_lists["process_message_before_send"]
         for hook in hook_list:
             message = hook(
-                sender=self, message=message, recipient=recipient, silent=ConversableAgent._is_silent(self, self.mute if self.mute else silent)
+                sender=self, message=message, recipient=recipient, silent=ConversableAgent._is_silent(self, silent)
             )
         return message
 
@@ -731,12 +732,12 @@ class ConversableAgent(LLMAgent):
         Raises:
             ValueError: if the message can't be converted into a valid ChatCompletion message.
         """
-        message = self._process_message_before_send(message, recipient, ConversableAgent._is_silent(self, self.mute if self.mute else silent))
+        message = self._process_message_before_send(message, recipient, ConversableAgent._is_silent(self, silent))
         # When the agent composes and sends the message, the role of the message is "assistant"
         # unless it's "function".
         valid = self._append_oai_message(message, "assistant", recipient, is_sending=True)
         if valid:
-            recipient.receive(message, self, request_reply, self.mute if self.mute else silent)
+            recipient.receive(message, self, request_reply, silent)
         else:
             raise ValueError(
                 "Message can't be converted into a valid ChatCompletion message. Either content or function_call must be provided."
@@ -781,12 +782,12 @@ class ConversableAgent(LLMAgent):
         Raises:
             ValueError: if the message can't be converted into a valid ChatCompletion message.
         """
-        message = self._process_message_before_send(message, recipient, ConversableAgent._is_silent(self, self.mute if self.mute else silent))
+        message = self._process_message_before_send(message, recipient, ConversableAgent._is_silent(self, silent))
         # When the agent composes and sends the message, the role of the message is "assistant"
         # unless it's "function".
         valid = self._append_oai_message(message, "assistant", recipient, is_sending=True)
         if valid:
-            await recipient.a_receive(message, self, request_reply, self.mute if self.mute else silent)
+            await recipient.a_receive(message, self, request_reply, silent)
         else:
             raise ValueError(
                 "Message can't be converted into a valid ChatCompletion message. Either content or function_call must be provided."
@@ -864,7 +865,7 @@ class ConversableAgent(LLMAgent):
                 "Received message can't be converted into a valid ChatCompletion message. Either content or function_call must be provided."
             )
 
-        if not ConversableAgent._is_silent(sender, self.mute if self.mute else silent):
+        if not ConversableAgent._is_silent(sender, silent):
             self._print_received_message(message, sender)
 
     def receive(
@@ -897,12 +898,12 @@ class ConversableAgent(LLMAgent):
         Raises:
             ValueError: if the message can't be converted into a valid ChatCompletion message.
         """
-        self._process_received_message(message, sender, self.mute if self.mute else silent)
+        self._process_received_message(message, sender, silent)
         if request_reply is False or request_reply is None and self.reply_at_receive[sender] is False:
             return
         reply = self.generate_reply(messages=self.chat_messages[sender], sender=sender)
         if reply is not None:
-            self.send(reply, sender, silent=self.mute if self.mute else silent)
+            self.send(reply, sender, silent=silent)
 
     async def a_receive(
         self,
@@ -934,12 +935,12 @@ class ConversableAgent(LLMAgent):
         Raises:
             ValueError: if the message can't be converted into a valid ChatCompletion message.
         """
-        self._process_received_message(message, sender, self.mute if self.mute else silent)
+        self._process_received_message(message, sender, silent)
         if request_reply is False or request_reply is None and self.reply_at_receive[sender] is False:
             return
         reply = await self.a_generate_reply(sender=sender)
         if reply is not None:
-            await self.a_send(reply, sender, silent=self.mute if self.mute else silent)
+            await self.a_send(reply, sender, silent=silent)
 
     def _prepare_chat(
         self,
@@ -1093,14 +1094,14 @@ class ConversableAgent(LLMAgent):
                     msg2send = self.generate_reply(messages=self.chat_messages[recipient], sender=recipient)
                 if msg2send is None:
                     break
-                self.send(msg2send, recipient, request_reply=True, silent=self.mute if self.mute else silent)
+                self.send(msg2send, recipient, request_reply=True, silent=silent)
         else:
             self._prepare_chat(recipient, clear_history)
             if isinstance(message, Callable):
                 msg2send = message(_chat_info["sender"], _chat_info["recipient"], kwargs)
             else:
                 msg2send = self.generate_init_message(message, **kwargs)
-            self.send(msg2send, recipient, silent=self.mute if self.mute else silent)
+            self.send(msg2send, recipient, silent=silent)
         summary = self._summarize_chat(
             summary_method,
             summary_args,
@@ -1159,14 +1160,14 @@ class ConversableAgent(LLMAgent):
                     msg2send = await self.a_generate_reply(messages=self.chat_messages[recipient], sender=recipient)
                 if msg2send is None:
                     break
-                await self.a_send(msg2send, recipient, request_reply=True, silent=self.mute if self.mute else silent)
+                await self.a_send(msg2send, recipient, request_reply=True, silent=silent)
         else:
             self._prepare_chat(recipient, clear_history)
             if isinstance(message, Callable):
                 msg2send = message(_chat_info["sender"], _chat_info["recipient"], kwargs)
             else:
                 msg2send = await self.a_generate_init_message(message, **kwargs)
-            await self.a_send(msg2send, recipient, silent=self.mute if self.mute else silent)
+            await self.a_send(msg2send, recipient, silent=silent)
         summary = self._summarize_chat(
             summary_method,
             summary_args,
