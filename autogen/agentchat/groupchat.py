@@ -107,7 +107,7 @@ class GroupChat:
     - send_introductions: send a round of introductions at the start of the group chat, so agents know who they can speak to (default: False)
     - role_for_select_speaker_messages: sets the role name for speaker selection when in 'auto' mode, typically 'user' or 'system'. (default: 'system')
     """
-    tracks_store: Any
+    tracks_store: List
     agents: List[Agent]
     messages: List[Dict]
     max_round: int = 10

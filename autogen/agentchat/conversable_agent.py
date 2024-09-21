@@ -69,7 +69,7 @@ class ConversableAgent(LLMAgent):
     def __init__(
         self,
         name: str,
-        tracks_store: Any = None,
+        tracks_store: List = None,
         mute: bool = False,
         system_message: Optional[Union[str, List]] = "You are a helpful AI Assistant.",
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
@@ -697,7 +697,7 @@ class ConversableAgent(LLMAgent):
         message: Union[Dict, str],
         recipient: Agent,
         request_reply: Optional[bool] = None,
-        silent: Optional[bool] = True,
+        silent: Optional[bool] = False,
     ):
         """Send a message to another agent.
 
@@ -747,7 +747,7 @@ class ConversableAgent(LLMAgent):
         message: Union[Dict, str],
         recipient: Agent,
         request_reply: Optional[bool] = None,
-        silent: Optional[bool] = True,
+        silent: Optional[bool] = False,
     ):
         """(async) Send a message to another agent.
 
@@ -872,7 +872,7 @@ class ConversableAgent(LLMAgent):
         message: Union[Dict, str],
         sender: Agent,
         request_reply: Optional[bool] = None,
-        silent: Optional[bool] = True,
+        silent: Optional[bool] = False,
     ):
         """Receive a message from another agent.
 
@@ -909,7 +909,7 @@ class ConversableAgent(LLMAgent):
         message: Union[Dict, str],
         sender: Agent,
         request_reply: Optional[bool] = None,
-        silent: Optional[bool] = True,
+        silent: Optional[bool] = False,
     ):
         """(async) Receive a message from another agent.
 
@@ -979,7 +979,7 @@ class ConversableAgent(LLMAgent):
         self,
         recipient: "ConversableAgent",
         clear_history: bool = True,
-        silent: Optional[bool] = True,
+        silent: Optional[bool] = False,
         cache: Optional[AbstractCache] = None,
         max_turns: Optional[int] = None,
         summary_method: Optional[Union[str, Callable]] = DEFAULT_SUMMARY_METHOD,
@@ -1122,7 +1122,7 @@ class ConversableAgent(LLMAgent):
         self,
         recipient: "ConversableAgent",
         clear_history: bool = True,
-        silent: Optional[bool] = True,
+        silent: Optional[bool] = False,
         cache: Optional[AbstractCache] = None,
         max_turns: Optional[int] = None,
         summary_method: Optional[Union[str, Callable]] = DEFAULT_SUMMARY_METHOD,
