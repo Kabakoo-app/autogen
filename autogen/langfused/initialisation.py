@@ -167,7 +167,7 @@ class LangFuseTrace:
                     "\n"
                 )
 
-                return chat_result
+                return chat_result, finale_answer, initial_message
 
             return wrapper
 
