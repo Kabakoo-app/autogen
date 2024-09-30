@@ -3,7 +3,8 @@ import sys
 from typing import Any, Dict, List, Optional, Protocol, Tuple, Union
 
 import tiktoken
-from termcolor import colored
+from autogen import safe_colored as colored
+
 
 from autogen import token_count_utils
 from autogen.cache import AbstractCache, Cache

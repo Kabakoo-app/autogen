@@ -9,7 +9,8 @@ import time
 from typing import Dict, List, Optional, Tuple, Union
 
 import requests
-from termcolor import colored
+
+from autogen import safe_colored as colored
 
 import autogen
 

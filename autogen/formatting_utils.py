@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Iterable, Literal
 
 try:
-    from termcolor import colored
+    from autogen import safe_colored as colored
+
 except ImportError:
     # termcolor is an optional dependency - if it cannot be imported then no color is used.
     # Alternatively the envvar NO_COLOR can be used to disable color.

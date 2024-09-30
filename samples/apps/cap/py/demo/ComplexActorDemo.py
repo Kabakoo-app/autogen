@@ -2,7 +2,8 @@ import time
 
 from AppAgents import FidelityAgent, FinancialPlannerAgent, PersonalAssistant, QuantAgent, RiskManager
 from autogencap.runtime_factory import RuntimeFactory
-from termcolor import colored
+from autogen import safe_colored as colored
+
 
 
 def complex_actor_demo():

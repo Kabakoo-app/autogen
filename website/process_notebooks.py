@@ -19,7 +19,8 @@ from multiprocessing import current_process
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
 
-from termcolor import colored
+from autogen import safe_colored as colored
+
 
 try:
     import yaml

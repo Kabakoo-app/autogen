@@ -1,6 +1,8 @@
 from .initialisation import LangFuseInitializer, LangFuseTrace
+from .color import safe_colored
 
 __all__ = (
     "LangFuseInitializer",
-    "LangFuseTrace"
+    "LangFuseTrace",
+    "safe_colored"
 )

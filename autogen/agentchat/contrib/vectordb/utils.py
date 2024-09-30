@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List
 
-from termcolor import colored
+from autogen import safe_colored as colored
 
 from .base import QueryResults
 

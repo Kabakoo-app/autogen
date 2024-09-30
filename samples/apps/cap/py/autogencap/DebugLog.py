@@ -1,7 +1,7 @@
 import datetime
 import threading
 
-from termcolor import colored
+from autogen import safe_colored as colored
 
 import autogencap.Config as Config
 
