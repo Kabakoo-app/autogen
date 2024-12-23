@@ -6,6 +6,7 @@ import json
 import logging
 import re
 import warnings
+import tiktoken
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, TypeVar, Union
 
@@ -260,6 +261,18 @@ class ConversableAgent(LLMAgent):
             "process_all_messages_before_reply": [],
             "process_message_before_send": [],
         }
+
+    def _get_tokens_count(self, text):
+        model = self.llm_config.get("model")
+
+        if model:
+            encoding = tiktoken.encoding_for_model(model)
+            tokens = encoding.encode(str(text))
+
+        else:
+            tokens = []
+
+        return len(tokens)
 
     def _validate_llm_config(self, llm_config):
         assert llm_config in (None, False) or isinstance(
@@ -1419,6 +1432,11 @@ class ConversableAgent(LLMAgent):
     ) -> Tuple[bool, Union[str, Dict, None]]:
 
         start_time = datetime.now(timezone.utc)
+
+        """Ceck the number of tokens"""
+        tokens_count = self._get_tokens_count(self._oai_system_message + messages)
+
+        print("tokens_count: ", tokens_count)
 
         """Generate a reply using autogen.oai."""
         client = self.client if config is None else config
